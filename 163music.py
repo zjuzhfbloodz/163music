@@ -37,18 +37,12 @@ def get_music(id,name,folder):
     """爬取一首歌曲，输入网易云网页版id后面的数字编号"""
 
     """发送请求，得到响应，因为我们找到了下载url，所以直接得到了byte音乐数据，直接写入mp3文件，记得要去掉命名中的标点之类的，不然不能创建"""
-    current_path = os.getcwd()
-    try:
-        os.mkdir("Music Library")
-        os.mkdir("Music Library\\{}".format(folder))
-    except:
-        pass
     base_url = 'http://music.163.com/song/media/outer/url?id=' + id + '.mp3'
     response = requests.get(url = base_url, headers = headers)
     response.raise_for_status()
     html = response.content
     name = "".join([x for x in name if x.isalpha() or x == " " or x.isalnum()])
-    with open('Music Library\\{}\\{}.mp3'.format(folder,name),'wb') as f:
+    with open('Music Library/{}/{}.mp3'.format(folder,name),'wb') as f:
         f.write(html)
     time.sleep(3)
 
@@ -86,9 +80,17 @@ def download_list(music_dict, folder_name):
 def main():
     """主程序"""
 
-    """目前支持三种模式的爬取，单首音乐、整个歌单或根据歌手下载"""
+    """目前支持三种模式的爬取，单首音乐、整个歌单或根据歌手下载，分别用012表示"""
 
     pattern = input("请输入您想爬取的内容类型，目前有歌曲、歌单和歌手三种，分别用0，1，2来代表： ")
+
+    """创建存放MP3文件主文件夹，以及存放单首歌曲的次级文件夹"""
+
+    try:
+        os.mkdir("Music Library")
+        os.mkdir("Music Library/Single Music")
+    except:
+        pass
 
 
     if pattern == "0":
@@ -102,6 +104,10 @@ def main():
         list_id = input("请输入歌单id，即网易云歌单链接id后面的数字编号： ")
         music_dict,list_name = get_list('https://music.163.com/playlist?id=',list_id)
         folder_name = "".join([x for x in list_name if x.isalpha() or x == " " or x.isalnum()])
+        try:
+            os.mkdir("Music Library/{}".format(folder_name))
+        except:
+            pass
         download_list(music_dict,folder_name)
         print("===========================================================")
         print("歌单 {} 下载完成".format(list_name))
@@ -111,6 +117,10 @@ def main():
         singer_id = input("请输入歌手id，即网易云歌手链接id后面的数字编号： ")
         music_dict,singer_name = get_list('https://music.163.com/artist?id=',singer_id)
         folder_name = "".join([x for x in singer_name if x.isalpha() or x == " " or x.isalnum()])
+        try:
+            os.mkdir("Music Library/{}".format(folder_name))
+        except:
+            pass
         download_list(music_dict,folder_name)
         print("===========================================================")
         print("歌手 {} 热门歌曲下载完成".format(singer_name))
