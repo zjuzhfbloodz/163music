@@ -110,7 +110,7 @@ def get_singer_id(singer_name):
         singerid = eval(f.read())
         return str(singerid[singer_name])
 
-    #同上
+    #曾经使用过的pandas创建csv版本，速度慢一些，而且打包成exe容量太大
     # singerid = pd.read_csv('singer-id.csv')
     # return str(singerid[singer_name].values[0])
 
