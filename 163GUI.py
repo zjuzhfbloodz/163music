@@ -100,9 +100,17 @@ def singer_to_id(headers):
 
     """设置字典变量singerid来保存歌手id信息"""
     singerid = {}
+    layout2 = [[sg.Text('检测到您是第一次使用下载歌手热门歌曲功能，正在更新歌手信息中...,可以刷一个3分钟左右的郭老师视频')],
+               [sg.Text('', size=(5, 1), font=('Helvetica', 15), justification='center', key='text')],
+               [sg.ProgressBar(5*3*26, orientation='h', size=(50, 20), key='progressbar')],
+               ]
+    window2 = sg.Window('更新歌手信息', layout=layout2)
+    progress_bar = window2['progressbar']
+    q,event = 0,0
     for p in [1,2,4,6,7]:
         for i in range(3):
             for j in range(26):
+                values = window2.read(timeout=10)
                 singer_url = 'https://music.163.com/discover/artist/cat?id={}&initial={}'
                 html = requests.get(url = singer_url.format(p * 1000 + i + 1,65 + j),headers = headers).content.decode("utf-8")
                 soup = BeautifulSoup(html, 'lxml')
@@ -114,8 +122,12 @@ def singer_to_id(headers):
                 singer_list = soup.find_all('li', {'class': 'sml'})
                 for singer in singer_list:
                     singerid[singer.text.strip()] = singer.find('a').get('href')[11:]
+                q += 1
+                progress_bar.UpdateBar(q + 1)
+                window2['text'].update('{}%'.format(int(q / (5*3*26) * 100)))
     with open("singer-id.txt",'w',encoding = 'utf-8') as f:
         f.write(str(singerid))
+    window2.close()
 
 
 
@@ -139,18 +151,18 @@ def music_gui(headers):
 
     """界面上的内容，用layout装载"""
     layout = [
-        [sg.Text('欢迎来到网易云音乐下载管理器')],
+        [sg.Text('欢迎来到网易云音乐下载管理器，我是您的助手zhfbloodz')],
         [sg.Text('选择要保存的文件夹', size=(15, 1), auto_size_text=False),
          sg.InputText(os.getcwd(),key = 'PATH'), sg.FolderBrowse()],
-        [sg.Text('请选择您要爬取的歌曲类型'), sg.InputCombo(('单首歌曲下载', '歌单下载', '歌手热门歌曲下载'), size=(20, 3),key = 'PATTERN'),],
-        [sg.Text('请输入您要爬取的歌曲id或歌手名称'), sg.InputText('歌曲和歌单下载填写id，歌手下载输入歌手名称',key = 'ID')],
-        [sg.Text('请选择爬取模式'), sg.InputCombo(('极速爬取', '反反爬虫模式'), size=(20, 3),key = "MODE"), ],
-        [sg.Button('开始爬取'), sg.Button('退出')],
+        [sg.Text('请选择歌曲模式'), sg.InputCombo(('单首歌曲下载', '歌单下载', '歌手热门歌曲下载'), size=(20, 3),key = 'PATTERN'),],
+        [sg.Text('请输入下载歌曲id或歌手名称'), sg.InputText('歌曲和歌单下载填写id，歌手下载输入歌手名称',key = 'ID')],
+        [sg.Text('请选择下载模式'), sg.InputCombo(('极速下载', '反反爬虫下载模式'), size=(20, 3),key = "MODE"), ],
+        [sg.Button('开始下载'), sg.Button('退出')],
 
     ]
 
     """创建GUI窗口"""
-    window = sg.Window('126 Music Download Manager', layout=layout)
+    window = sg.Window('163 Music Download Manager', layout=layout)
 
     while True:
 
@@ -194,6 +206,18 @@ def music_gui(headers):
             print("歌单 {} 下载完成".format(list_name))
 
         elif pattern == '歌手热门歌曲下载':
+            """如果是第一次使用该功能，爬取下载歌手id数据库"""
+            if not os.path.exists('singer-id.txt'):
+                print('\n')
+                print('===============================更新后台歌手数据中====================================')
+                print('\n')
+                print('系统检测到您是第一次使用歌手下载功能，正在初始化后台数据中，这个过程可能需要数分钟，请您耐心等待')
+                print('\n')
+                print('===============================更新后台歌手数据中====================================')
+                singer_to_id(headers)
+                print('\n')
+                print('===============================歌手数据更新完毕！====================================')
+                print('\n')
             id = get_singer_id(id)
             music_dict, singer_name = get_list('https://music.163.com/artist?id=', id, headers)
             print('歌手信息读取完毕！')
